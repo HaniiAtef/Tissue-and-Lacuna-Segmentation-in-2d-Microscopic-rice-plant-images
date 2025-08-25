@@ -20,25 +20,37 @@ This repository provides training and inference code for segmenting **Tissue Cor
     │   └── test_inference.py        # Quick inference test
 ```
 
-Pretrained models (3 total) are available via Google Drive:  
-**[Download models here](https://drive.google.com/your-models-link)**
+Pretrained models (6 total: 3 models for the Lacuna and 3 models for Cortex and Endo) are available via Google Drive:  
+**[Download models here](https://drive.google.com/drive/folders/1Xd785QHcLC2CnkLLYYvWH1R51p2i2uLS?usp=drive_link)**
 
 ---
 
 ## 1. Installation
 
 Clone the repository and install dependencies:
-
 ```bash
 git clone https://github.com/HaniiAtef/Tissue-and-Lacuna-Segmentation-in-2d-Microscopic-rice-plant-images.git
+
+```
+```bash
 cd Tissue-and-Lacuna-Segmentation-in-2d-Microscopic-rice-plant-images
+```
 
 # (Recommended) Create a virtual environment
+```bash
 python3 -m venv venv
+```
+```bash
 source venv/bin/activate   # Linux / MacOS
+```
+
+```bash
 venv\Scripts\activate      # Windows
+```
+
 
 # Install required packages
+```bash
 pip install -r requirements.txt
 ```
 
@@ -54,11 +66,13 @@ Download the **three SegFormer models** from Google Drive and place them in:
 Models/
 ├── Lacuna_models/
 │   └── B2_model/         # AR model
+    └── B3_model/
+    └── B4_model/ 
 └── Cortex_Endo_models/
     └── B2_model/         # CE model
+    └── B3_model/
+    └── B4_model/ 
 ```
-
-(If there is a third model, store it alongside in the corresponding folder.)
 
 ---
 
