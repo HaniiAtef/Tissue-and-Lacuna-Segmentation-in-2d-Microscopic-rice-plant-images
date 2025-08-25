@@ -1,39 +1,45 @@
 import os
-import argparse
 import torch
 import numpy as np
+import pandas as pd
 from PIL import Image
 from torchvision import transforms
 from transformers import SegformerForSemanticSegmentation
 import tifffile
-import cv2
+from scipy.ndimage import label
+import argparse
+import warnings
 
-class SegformerInference:
-    def __init__(self, model_ar_path, model_ce_path, output_dir):
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+class SegformerPredictor:
+    def __init__(self, model_ar_path, model_ce_path, images_path, output_path):
+        self.model_ar_path = model_ar_path
+        self.model_ce_path = model_ce_path
+        self.images_path = images_path
+        self.output_path = output_path
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.target_size = (341, 512)
-        self.output_dir = output_dir
-        os.makedirs(output_dir, exist_ok=True)
 
         # Load models
-        self.model_ar = SegformerForSemanticSegmentation.from_pretrained(model_ar_path).to(self.device).eval()
-        self.model_ce = SegformerForSemanticSegmentation.from_pretrained(model_ce_path).to(self.device).eval()
+        self.model_ar = SegformerForSemanticSegmentation.from_pretrained(self.model_ar_path).to(self.device).eval()
+        self.model_ce = SegformerForSemanticSegmentation.from_pretrained(self.model_ce_path).to(self.device).eval()
 
         # Define transforms
         self.transform = transforms.Compose([
             transforms.Resize(self.target_size),
             transforms.ToTensor(),
-            transforms.Lambda(lambda x: x.repeat(3, 1, 1))
+            transforms.Lambda(lambda x: x.repeat(3, 1, 1))  # convert grayscale to 3-channel
         ])
 
-    def apply_clahe(self, pil_image):
-        img_np = np.array(pil_image)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        enhanced = clahe.apply(img_np)
-        return Image.fromarray(enhanced)
+    def get_largest_component_mask(self, binary_mask):
+        labeled_array, num_features = label(binary_mask)
+        if num_features == 0:
+            return binary_mask * 0
+        largest_component = np.argmax(np.bincount(labeled_array.flat)[1:]) + 1
+        return (labeled_array == largest_component).astype(np.uint8)
 
     def predict_mask(self, model, image):
-        image = self.apply_clahe(image)
         image_tensor = self.transform(image).unsqueeze(0).to(self.device)
         with torch.no_grad():
             logits = model(image_tensor).logits
@@ -45,21 +51,24 @@ class SegformerInference:
     def create_mask_gray(self, pred, class_id):
         return np.where(pred == class_id, 255, 0).astype(np.uint8)
 
-    def run_inference(self, image_paths):
-        ar_dir = os.path.join(self.output_dir, 'pred_AR')
-        cortex_dir = os.path.join(self.output_dir, 'pred_Cortex')
-        endo_dir = os.path.join(self.output_dir, 'pred_Endoderm')
+    def run_prediction(self):
+        pred_dir = os.path.join(self.output_path, 'predicted_images')
+        os.makedirs(pred_dir, exist_ok=True)
+        ar_dir = os.path.join(pred_dir, 'pred_AR')
+        cortex_dir = os.path.join(pred_dir, 'pred_Cortex')
+        endo_dir = os.path.join(pred_dir, 'pred_Endoderm')
         os.makedirs(ar_dir, exist_ok=True)
         os.makedirs(cortex_dir, exist_ok=True)
         os.makedirs(endo_dir, exist_ok=True)
 
-        print(f"Processing {len(image_paths)} images...")
+        rows = []
+        for image_file in os.listdir(self.images_path):
+            if not image_file.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff')):
+                continue
 
-        for img_path in image_paths:
-            image_name = os.path.basename(img_path)
+            img_path = os.path.join(self.images_path, image_file)
             image = Image.open(img_path).convert('L')
 
-            # Predictions
             pred_ar = self.predict_mask(self.model_ar, image)
             pred_ce = self.predict_mask(self.model_ce, image)
 
@@ -67,40 +76,48 @@ class SegformerInference:
             mask_cortex = self.create_mask_gray(pred_ce, 1)
             mask_endo = self.create_mask_gray(pred_ce, 2)
 
+            # Combine CE masks for largest component
+            combined_ce = ((mask_cortex > 0) | (mask_endo > 0)).astype(np.uint8)
+            largest_cc = self.get_largest_component_mask(combined_ce)
+
+            # Crop AR within largest CE component
+            ar_in_cc = ((mask_ar > 0) & (largest_cc > 0)).astype(np.uint8)
+            cortex_in_cc = ((mask_cortex > 0) & (largest_cc > 0)).astype(np.uint8)
+
+            total_ce_pixels = largest_cc.sum()
+            total_cortex_pixels = cortex_in_cc.sum()
+            ar_pixels = ar_in_cc.sum()
+
+            metrics = {
+                'image_name': image_file,
+                'AR_percent_in_Cortex+Endoderm': (ar_pixels / total_ce_pixels * 100) if total_ce_pixels > 0 else 0,
+                'AR_percent_in_Cortex_only': (ar_pixels / total_cortex_pixels * 100) if total_cortex_pixels > 0 else 0
+            }
+            rows.append(metrics)
+
             # Save masks
-            tifffile.imwrite(os.path.join(ar_dir, image_name), mask_ar)
-            tifffile.imwrite(os.path.join(cortex_dir, image_name), mask_cortex)
-            tifffile.imwrite(os.path.join(endo_dir, image_name), mask_endo)
-            print(f"Processed: {image_name}")
+            tifffile.imwrite(os.path.join(ar_dir, image_file), mask_ar)
+            tifffile.imwrite(os.path.join(cortex_dir, image_file), mask_cortex)
+            tifffile.imwrite(os.path.join(endo_dir, image_file), mask_endo)
 
-def get_image_paths(input_path):
-    if not os.path.exists(input_path):
-        raise ValueError(f"Input path does not exist: {input_path}")
+        # Save CSV
+        df_out = pd.DataFrame(rows)
+        df_out.to_csv(os.path.join(self.output_path, 'pred_metrics.csv'), index=False)
+        print(f"Prediction complete. Masks and CSV saved in {self.output_path}.")
 
-    if os.path.isdir(input_path):
-        files = [os.path.join(input_path, f) for f in os.listdir(input_path)
-                 if f.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff'))]
-        if not files:
-            raise ValueError(f"No image files found in folder: {input_path}")
-        return sorted(files)
 
-    elif os.path.isfile(input_path):
-        if input_path.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff')):
-            return [input_path]
-        else:
-            raise ValueError("Input file must be an image (png, jpg, jpeg, tif, tiff).")
-
-    else:
-        raise ValueError("Input path must be a folder or a single image file.")
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input', type=str, default='path/to/image_folder', help='Path to image or folder of images')
-    parser.add_argument('--model_ar', type=str, default='../Models/Lacuna_models/B2_model', help='Path to AR model')
-    parser.add_argument('--model_ce', type=str, default='../Models/Cortex_Endoderm_models/B2_model', help='Path to CE model')
-    parser.add_argument('--output', type=str, default='../data/output_masks', help='Directory to save masks')
+    parser.add_argument('--images', type=str, default='/home/hmohamed/Documents/test_github/1_Source', help='Path to image or folder of images')
+    parser.add_argument('--output', type=str, default='/home/hmohamed/Documents/test_github/output_test', help='Directory to save masks')
+    parser.add_argument('--model_ar', type=str, default='/home/hmohamed/Documents/test_github/Models/Lacuna_models/B2_model', help='Path to AR model')
+    parser.add_argument('--model_ce', type=str, default='/home/hmohamed/Documents/test_github/Models/Cortex_Endo_models/B2_model', help='Path to CE model')
+
     args = parser.parse_args()
 
-    image_paths = get_image_paths(args.input)
-    inference = SegformerInference(args.model_ar, args.model_ce, args.output)
-    inference.run_inference(image_paths)
+    predictor = SegformerPredictor(args.model_ar, args.model_ce, args.images, args.output)
+    predictor.run_prediction()
+
+
+if __name__ == "__main__":
+    main()
