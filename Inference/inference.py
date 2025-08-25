@@ -108,10 +108,10 @@ class SegformerPredictor:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--images', type=str, default='/home/hmohamed/Documents/test_github/1_Source', help='Path to image or folder of images')
-    parser.add_argument('--output', type=str, default='/home/hmohamed/Documents/test_github/output_test', help='Directory to save masks')
-    parser.add_argument('--model_ar', type=str, default='/home/hmohamed/Documents/test_github/Models/Lacuna_models/B2_model', help='Path to AR model')
-    parser.add_argument('--model_ce', type=str, default='/home/hmohamed/Documents/test_github/Models/Cortex_Endo_models/B2_model', help='Path to CE model')
+    parser.add_argument('--images', type=str, default='/path/to/image/folder', help='Path to image or folder of images')
+    parser.add_argument('--output', type=str, default='/path/to/output/folder', help='Directory to save masks')
+    parser.add_argument('--model_ar', type=str, default='/path/to/Lacuna_model', help='Path to AR model')
+    parser.add_argument('--model_ce', type=str, default='/path/to/Cortex_Endo_model', help='Path to CE model')
 
     args = parser.parse_args()
 
