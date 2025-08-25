@@ -140,13 +140,4 @@ python test_inference.py --images /path/to/images --model_ar /path/to/model
 
 ---
 
-## Citation
 
-If you use this repository, please cite the original work or link back to this repo.
-
----
-
-## License
-
-This project is released under the **MIT License**.  
-See [LICENSE](LICENSE) for details.
