@@ -65,7 +65,7 @@ Download the **three SegFormer models** from Google Drive and place them in:
 ```
 Models/
 ├── Lacuna_models/
-│   └── B2_model/         # AR model
+    └── B2_model/         # AR model
     └── B3_model/
     └── B4_model/ 
 └── Cortex_Endo_models/
@@ -93,6 +93,8 @@ The `dataset.py` handles loading and preprocessing automatically.
 
 The `CellDataset` class expects a **folder hierarchy** and naming convention like this:
 
+
+```
 All_Use_Cases/
 ├── UC1/
 │ ├── Experiment1/
@@ -115,7 +117,7 @@ All_Use_Cases/
 │ └── ... (same structure)
 └── ...
 
-
+```
 
 ### Key Points
 
