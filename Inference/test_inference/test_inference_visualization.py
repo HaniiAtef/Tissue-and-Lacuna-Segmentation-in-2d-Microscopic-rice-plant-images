@@ -21,9 +21,7 @@ class SegformerDualMetrics:
         self.model_ce_path = model_ce_path
         self.root_path = root_path
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.target_size = (341, 512)
-        # self.target_size = (681, 1024)
-        # self.target_size = (1088, 1636)
+        self.target_size = (341, 512)  # height, width
 
         # Load models
         self.model_ar = SegformerForSemanticSegmentation.from_pretrained(self.model_ar_path).to(self.device).eval()
@@ -36,24 +34,17 @@ class SegformerDualMetrics:
             transforms.Lambda(lambda x: x.repeat(3, 1, 1))
         ])
 
-    def apply_clahe(self, pil_image):
-        """Apply CLAHE to a grayscale PIL image and return a PIL image."""
-        img_np = np.array(pil_image)  
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        enhanced = clahe.apply(img_np)
-        return Image.fromarray(enhanced)
-
+    # ----------------------
+    # MASK & METRICS HELPERS
+    # ----------------------
     def get_largest_component_mask(self, binary_mask):
         labeled_array, num_features = label(binary_mask)
         if num_features == 0:
-            return binary_mask * 0  
+            return binary_mask * 0
         largest_component = np.argmax(np.bincount(labeled_array.flat)[1:]) + 1
         return (labeled_array == largest_component).astype(np.uint8)
 
     def predict_mask(self, model, image):
-        # Apply CLAHE enhancement
-        image = self.apply_clahe(image)
-
         image_tensor = self.transform(image).unsqueeze(0).to(self.device)
         with torch.no_grad():
             logits = model(image_tensor).logits
@@ -65,6 +56,9 @@ class SegformerDualMetrics:
     def create_mask_gray(self, pred, class_id):
         return np.where(pred == class_id, 255, 0).astype(np.uint8)
 
+    # ----------------------
+    # METRICS GENERATION
+    # ----------------------
     def metrics_generation(self):
         for subfolder in sorted(f for f in os.listdir(self.root_path) if os.path.isdir(os.path.join(self.root_path, f))):
             subfolder_path = os.path.join(self.root_path, subfolder)
@@ -134,22 +128,32 @@ class SegformerDualMetrics:
                 rows.append(metrics)
 
                 # Save predicted masks
-                # Create subfolders
                 ar_dir = os.path.join(pred_dir, 'pred_AR')
                 cortex_dir = os.path.join(pred_dir, 'pred_Cortex')
                 endo_dir = os.path.join(pred_dir, 'pred_Endoderm')
-                os.makedirs(ar_dir, exist_ok=True)
-                os.makedirs(cortex_dir, exist_ok=True)
-                os.makedirs(endo_dir, exist_ok=True)
+                raw_dir = os.path.join(pred_dir, 'raw_images')
+                for d in [ar_dir, cortex_dir, endo_dir, raw_dir]:
+                    os.makedirs(d, exist_ok=True)
 
-                # Save individual masks
                 tifffile.imwrite(os.path.join(ar_dir, image_file), mask_ar)
                 tifffile.imwrite(os.path.join(cortex_dir, image_file), mask_cortex)
                 tifffile.imwrite(os.path.join(endo_dir, image_file), mask_endo)
 
-            df_out = pd.DataFrame(rows)
-            df_out.to_csv(os.path.join(subfolder_path, 'pred_metrics.csv'), index=False)
+                # Save raw grayscale resized to 512x341
+                raw_np = np.array(image.resize((512, 341)))
+                cv2.imwrite(os.path.join(raw_dir, image_file), raw_np)
 
+            df_out = pd.DataFrame(rows)
+            metrics_csv = os.path.join(subfolder_path, 'pred_metrics.csv')
+            df_out.to_csv(metrics_csv, index=False)
+
+            # Build merged 3D TIFF visualization
+            self.build_merged_tiff(raw_dir, ar_dir, os.path.join(pred_dir, 'merged_output.tif'),
+                                   metrics_csv=metrics_csv)
+
+    # ----------------------
+    # METRIC COMPARISON
+    # ----------------------
     def metric_comparison(self):
         for subfolder in sorted(f for f in os.listdir(self.root_path) if os.path.isdir(os.path.join(self.root_path, f))):
             path = os.path.join(self.root_path, subfolder)
@@ -182,17 +186,79 @@ class SegformerDualMetrics:
             except Exception as e:
                 print(f"Skipping {subfolder} due to error: {e}")
 
+    # ----------------------
+    # MERGED 3D TIFF FUNCTION
+    # ----------------------
+    def build_merged_tiff(self, raw_dir, ar_dir, output_path, alpha=0.3, metrics_csv=None):
+        if metrics_csv is None:
+            raise ValueError("metrics_csv path must be provided")
+        df = pd.read_csv(metrics_csv)
+
+        def overlay_mask(base_image, mask, color=(255,0,0), alpha=0.3):
+            overlay = base_image.copy()
+            color_mask = np.zeros_like(base_image)
+            color_mask[mask>0] = color
+            return cv2.addWeighted(color_mask, alpha, overlay, 1-alpha, 0)
+
+        def add_header(labels, panel_width=512, height=80, label_width=120):
+            total_width = label_width + panel_width * len(labels)
+            header = np.ones((height, total_width, 3), dtype=np.uint8)*255
+            for i, label in enumerate(labels):
+                x = label_width + i*panel_width + 10
+                cv2.putText(header, label, (x,int(height*0.7)), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0,0,0),2)
+            return header
+
+        def add_row_label(idx, ar_percent, height, width=120):
+            label_strip = np.ones((height,width,3),dtype=np.uint8)*255
+            cv2.putText(label_strip, f"{idx}", (5,int(height*0.4)), cv2.FONT_HERSHEY_SIMPLEX,0.9,(0,0,0),2)
+            cv2.putText(label_strip, f"AR {ar_percent:.1f}%", (5,int(height*0.8)), cv2.FONT_HERSHEY_SIMPLEX,0.7,(0,0,0),2)
+            return label_strip
+
+        df_sorted = df.sort_values(by='AR_percent_in_Cortex_only', ascending=False).reset_index(drop=True)
+
+        panel_rows=[]
+        idx=1
+        for _, row in df_sorted.iterrows():
+            fname = row['image_name']
+            ar_percent = row['AR_percent_in_Cortex_only']
+            raw_path = os.path.join(raw_dir, fname)
+            ar_mask_path = os.path.join(ar_dir, fname)
+            if not os.path.exists(raw_path) or not os.path.exists(ar_mask_path):
+                continue
+
+            raw_img = cv2.imread(raw_path, cv2.IMREAD_GRAYSCALE)
+            base_rgb = cv2.cvtColor(raw_img, cv2.COLOR_GRAY2BGR)
+
+            mask = cv2.imread(ar_mask_path, cv2.IMREAD_GRAYSCALE)
+            mask_resized = cv2.resize(mask, (512, 341), interpolation=cv2.INTER_NEAREST)
+            mask_bin = (mask_resized > 127).astype(np.uint8)
+            overlay = overlay_mask(base_rgb, mask_bin, color=(255,0,0), alpha=alpha)
+
+            row_img = np.hstack([add_row_label(idx, ar_percent, height=raw_img.shape[0]), base_rgb, overlay])
+            panel_rows.append(row_img)
+            idx+=1
+
+        if not panel_rows:
+            print("No images to build TIFF.")
+            return
+
+        header = add_header(["Raw","Predicted (AR)"], panel_width=512, height=80, label_width=120)
+        final_stack = np.stack([np.vstack([header]+panel_rows)], axis=0)
+        tifffile.imwrite(output_path, final_stack, photometric='rgb')
+        print(f"Merged visualization saved at {output_path}")
+
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--uc', type=str, default='path/to/use_case', help='Root directory path')
-    parser.add_argument('--model_ar', type=str, default='../../Models/Lacuna_models/B2_model', help='Path to AR model')
-    parser.add_argument('--model_ce', type=str, default='../../Models/Cortex_Endoderm_models/B2_model', help='Path to CE model')
+    parser.add_argument('--uc', type=str, default='/home/hmohamed/Documents/test_github/data/UC_test_data/UC3-DOMI-VARI', help='Root directory path')
+    parser.add_argument('--model_ar', type=str, default='/home/hmohamed/Documents/test_github/Models/Lacuna_models/B2_model', help='Path to AR model')
+    parser.add_argument('--model_ce', type=str, default='/home/hmohamed/Documents/test_github/Models/Cortex_Endo_models/B2_model', help='Path to CE model')
     args = parser.parse_args()
 
     metrics = SegformerDualMetrics(args.model_ar, args.model_ce, args.uc)
     metrics.metrics_generation()
     metrics.metric_comparison()
+
 
 if __name__ == "__main__":
     main()
