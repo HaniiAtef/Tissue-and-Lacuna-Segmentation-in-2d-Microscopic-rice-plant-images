@@ -57,7 +57,7 @@ venv\Scripts\activate      # Windows
 pip install -r requirements.txt
 ```
 
-> **Note:** Ensure you have **Python 3.8+** and **torch** installed with CUDA if you plan to use GPU acceleration.
+> **Note:** Ensure you have **Python 3.11+**
 
 ---
 
