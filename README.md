@@ -1,6 +1,6 @@
 # Tissue-and-Lacuna-Segmentation-in-2d-microscopic-images-of-rice-plant
 
-This repository provides training and inference code for segmenting **Tissue Cortex/Endoderm (CE)** and **Lacuna (AR)** regions in 2D microscopic rice plant images using [SegFormer](https://huggingface.co/docs/transformers/model_doc/segformer) models.
+This repository provides training and inference code for segmenting **Tissue Cortex/Endoderm (CE)** and **Lacuna (AR)** regions in 2D microscopic rice plant images using SegFormer models.
 
 ---
 
@@ -8,6 +8,10 @@ This repository provides training and inference code for segmenting **Tissue Cor
 
 ```
 .
+├── Data_processing/
+│   ├── mask_gen.py                    # Mask generation 
+│   ├── data_aug.py                    # Data augmentation
+│
 ├── Train/
 │   ├── dataset.py                  # Data loading and preprocessing
 │   ├── train.py                    # Training script for SegFormer models
@@ -30,7 +34,6 @@ Pretrained models (6 total: 3 models for the Lacuna and 3 models for Cortex and 
 Clone the repository and install dependencies:
 ```bash
 git clone https://github.com/HaniiAtef/Tissue-and-Lacuna-Segmentation-in-2d-Microscopic-rice-plant-images.git
-
 ```
 ```bash
 cd Tissue-and-Lacuna-Segmentation-in-2d-Microscopic-rice-plant-images
@@ -173,15 +176,15 @@ python inference.py     --images /path/to/images     --output /path/to/output_di
 
 Several helper scripts are in `Inference/test_inference/`:
 
-- `Pred_vs_true_ar.py` – Compare predicted AR masks with ground truth  
+- `Pred_vs_true_ar.py` – Compare predicted percentages of Lacuna in Cortex vs ground truth  
 - `test_CLAHE_filter_inference.py` – Test CLAHE preprocessing with inference  
-- `test_inference.py` – Quick run for debugging or verifying inference works  
+- `test_inference.py` – Test inference  
 
 Run them directly, e.g.:
 
 ```bash
 cd Inference/test_inference
-python test_inference.py --images /path/to/images --model_ar /path/to/model
+python test_inference.py --images /path/to/images --model_ar /path/to/model --model_ce /path/to/model
 ```
 
 ---
