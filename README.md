@@ -168,7 +168,7 @@ pip install -r requirements.txt
 
 ## 2. Download Pretrained Models
 
-Download the **three SegFormer models** from Google Drive and place them in:
+Download the **six SegFormer models** from **[Google Drive](https://drive.google.com/drive/folders/1Xd785QHcLC2CnkLLYYvWH1R51p2i2uLS?usp=drive_link)**and place them in the root directory beside the Training, Data_processing and the Inference folders:
 
 ```
 Models/
