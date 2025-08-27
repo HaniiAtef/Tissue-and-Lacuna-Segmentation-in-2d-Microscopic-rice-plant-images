@@ -40,16 +40,16 @@ cd Tissue-and-Lacuna-Segmentation-in-2d-Microscopic-rice-plant-images
 ```
 
 
-# Python 3.11 Virtual Environment Setup
+### Python 3.11 Virtual Environment Setup
 
-## Quick Setup (If Python 3.11 is Already Installed)
+#### Quick Setup (If Python 3.11 is Already Installed)
 
-### Create Virtual Environment
+#### Create Virtual Environment
 ```bash
 python3.11 -m venv venv
 ```
 
-### Activate Virtual Environment
+#### Activate Virtual Environment
 **Linux / macOS:**
 ```bash
 source venv/bin/activate
@@ -60,18 +60,18 @@ source venv/bin/activate
 venv\Scripts\activate
 ```
 
-### Install Required Packages
+#### Install Required Packages
 ```bash
 pip install -r requirements.txt
 ```
 
 > **Note:** Ensure you have Python 3.11+ installed
 
-## Installing Python 3.11
+#### Installing Python 3.11
 
 If Python 3.11 is not already available, you must install it first, then create a virtual environment explicitly using that version.
 
-### Linux (Debian/Ubuntu)
+#### Linux (Debian/Ubuntu)
 ```bash
 sudo apt update
 sudo apt install software-properties-common
@@ -80,18 +80,18 @@ sudo apt update
 sudo apt install python3.11 python3.11-venv python3.11-dev
 ```
 
-### Linux (Fedora/RHEL/CentOS)
+#### Linux (Fedora/RHEL/CentOS)
 ```bash
 sudo dnf install python3.11 python3.11-venv python3.11-devel
 ```
 
-### macOS (Homebrew)
+#### macOS (Homebrew)
 ```bash
 brew update
 brew install python@3.11
 ```
 
-### Windows
+#### Windows
 
 **Option 1: Windows Store**
 - Search for "Python 3.11" and install
@@ -104,9 +104,9 @@ brew install python@3.11
 choco install python --version=3.11.5
 ```
 
-## Create and Activate Virtual Environment with Python 3.11
+#### Create and Activate Virtual Environment with Python 3.11
 
-### Create Virtual Environment
+#### Create Virtual Environment
 **Linux/macOS:**
 ```bash
 python3.11 -m venv venv
@@ -117,7 +117,7 @@ python3.11 -m venv venv
 py -3.11 -m venv venv
 ```
 
-### Activate Virtual Environment
+#### Activate Virtual Environment
 
 **Linux/macOS:**
 ```bash
@@ -134,7 +134,7 @@ venv\Scripts\activate
 .\venv\Scripts\Activate.ps1
 ```
 
-### Verify Installation
+#### Verify Installation
 ```bash
 python --version
 ```
@@ -144,7 +144,7 @@ Should print: `Python 3.11.x`
 
 
 
-# (Recommended) Create a virtual environment
+### (Recommended) Create a virtual environment
 ```bash
 python3 -m venv venv
 ```
@@ -157,7 +157,7 @@ venv\Scripts\activate      # Windows
 ```
 
 
-# Install required packages
+### Install required packages
 ```bash
 pip install -r requirements.txt
 ```
