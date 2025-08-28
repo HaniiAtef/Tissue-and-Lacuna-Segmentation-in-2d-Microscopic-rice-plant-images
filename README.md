@@ -40,6 +40,28 @@ cd Tissue-and-Lacuna-Segmentation-in-2d-Microscopic-rice-plant-images
 ```
 
 # (Recommended) Create a virtual environment
+
+
+First, verify that python 3.11 is available
+python3 --version
+
+(should yield 3.11).
+
+If not : 
+
+(Ubuntu / Debian)
+sudo apt update
+sudo apt install -y python3.11 python3.11-venv
+python3.11 -m venv venv
+source venv/bin/activate
+python --version   # doit afficher Python 3.11.x ou 3.12.x
+
+pip install --upgrade pip
+pip install -r requirements.txt
+
+
+Then :
+
 ```bash
 python3 -m venv venv
 ```
@@ -63,8 +85,12 @@ pip install -r requirements.txt
 
 ## 2. Download Pretrained Models
 
-Download the **three SegFormer models** from Google Drive and place them in:
+Download the **three SegFormer models** from Google Drive and place them in the root of the repository (beside Inference/ , Train/ etc..) :
 
+(reminder : download path on google drive below)
+**[Download models here](https://drive.google.com/drive/folders/1Xd785QHcLC2CnkLLYYvWH1R51p2i2uLS?usp=drive_link)**
+
+B2 is the lighter model, but the less accurate. B4 is the heavier model (computationally) but is the most accurate. Choose depending on your configuration
 ```
 Models/
 ├── Lacuna_models/
