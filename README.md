@@ -39,6 +39,8 @@ git clone https://github.com/HaniiAtef/Tissue-and-Lacuna-Segmentation-in-2d-Micr
 cd Tissue-and-Lacuna-Segmentation-in-2d-Microscopic-rice-plant-images
 ```
 
+
+
 # (Recommended) Create a virtual environment
 
 
@@ -62,6 +64,113 @@ pip install -r requirements.txt
 
 Then :
 
+=======
+
+### Python 3.11 Virtual Environment Setup
+
+#### Quick Setup (If Python 3.11 is Already Installed)
+
+#### Create Virtual Environment
+```bash
+python3.11 -m venv venv
+```
+
+#### Activate Virtual Environment
+**Linux / macOS:**
+```bash
+source venv/bin/activate
+```
+
+**Windows:**
+```cmd
+venv\Scripts\activate
+```
+
+#### Install Required Packages
+```bash
+pip install -r requirements.txt
+```
+
+> **Note:** Ensure you have Python 3.11+ installed
+
+#### Installing Python 3.11
+
+If Python 3.11 is not already available, you must install it first, then create a virtual environment explicitly using that version.
+
+#### Linux (Debian/Ubuntu)
+```bash
+sudo apt update
+sudo apt install software-properties-common
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install python3.11 python3.11-venv python3.11-dev
+```
+
+#### Linux (Fedora/RHEL/CentOS)
+```bash
+sudo dnf install python3.11 python3.11-venv python3.11-devel
+```
+
+#### macOS (Homebrew)
+```bash
+brew update
+brew install python@3.11
+```
+
+#### Windows
+
+**Option 1: Windows Store**
+- Search for "Python 3.11" and install
+
+**Option 2: Direct Download**
+- Visit [python.org/downloads](https://python.org/downloads)
+
+**Option 3: Chocolatey (if available)**
+```powershell
+choco install python --version=3.11.5
+```
+
+#### Create and Activate Virtual Environment with Python 3.11
+
+#### Create Virtual Environment
+**Linux/macOS:**
+```bash
+python3.11 -m venv venv
+```
+
+**Windows:**
+```cmd
+py -3.11 -m venv venv
+```
+
+#### Activate Virtual Environment
+
+**Linux/macOS:**
+```bash
+source venv/bin/activate
+```
+
+**Windows (Command Prompt):**
+```cmd
+venv\Scripts\activate
+```
+
+**Windows (PowerShell):**
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
+#### Verify Installation
+```bash
+python --version
+```
+
+Should print: `Python 3.11.x`
+
+
+
+
+### (Recommended) Create a virtual environment
 ```bash
 python3 -m venv venv
 ```
@@ -74,18 +183,20 @@ venv\Scripts\activate      # Windows
 ```
 
 
-# Install required packages
+### Install required packages
 ```bash
 pip install -r requirements.txt
 ```
 
-> **Note:** Ensure you have **Python 3.8+** and **torch** installed with CUDA if you plan to use GPU acceleration.
+> **Note:** Ensure you have **Python 3.11+**
 
 ---
 
 ## 2. Download Pretrained Models
 
 Download the **three SegFormer models** from Google Drive and place them in the root of the repository (beside Inference/ , Train/ etc..) :
+=======
+Download the **six SegFormer models** from [Google Drive](https://drive.google.com/drive/folders/1Xd785QHcLC2CnkLLYYvWH1R51p2i2uLS?usp=drive_link) and place them in the root directory beside the Training, Data_processing and the Inference folders:
 
 (reminder : download path on google drive below)
 **[Download models here](https://drive.google.com/drive/folders/1Xd785QHcLC2CnkLLYYvWH1R51p2i2uLS?usp=drive_link)**

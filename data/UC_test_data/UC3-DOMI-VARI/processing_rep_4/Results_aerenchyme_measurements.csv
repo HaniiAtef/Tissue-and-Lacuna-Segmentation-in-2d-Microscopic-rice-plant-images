@@ -1,0 +1,5 @@
+Column1;Column2;Column3;Column4;Column5;Column6;Column7;Column8;Column9;Column10;Column11;Column12;Column13;Column14
+0_PARAM_ImgName;1_PARAM_INFO;2_PARAM_Geno;3_PARAM_Management;4_PARAM_Depth;5_PARAM_Repetition;6_PARAM_pixsize;7_MEASURED_total_cortex_surface;8_MEASURED_strict_stele_surface_without_endoderm;9_MEASURED_endoderm_surface;10_MEASURED_lacune_and_cytoplasms_surface;11_MEASURED_lacune_surface;12_COMPUTED_lacune_ratio_percent;13_COMPUTED_cortex_over_stele_ratio
+R91_a.tif;No info;No info;No info;No info;R91_a;0.869276;215422.0;35174.0;6783.0;197110.0;140295.0;71.176;6.1245
+R91_b.tif;No info;No info;No info;No info;R91_b;0.869276;181661.0;29800.0;6456.0;165761.0;112948.0;68.1391;6.096
+R93_a.tif;No info;No info;No info;No info;R93_a;0.869276;349724.0;28255.0;6041.0;327743.0;307429.0;93.8019;12.3774

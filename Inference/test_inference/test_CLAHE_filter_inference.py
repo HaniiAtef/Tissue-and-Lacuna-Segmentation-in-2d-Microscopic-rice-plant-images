@@ -157,6 +157,7 @@ class SegformerDualMetrics:
                 real_df = pd.read_csv(os.path.join(path, 'output.csv'))
                 pred_df = pd.read_csv(os.path.join(path, 'pred_metrics.csv'))
                 merged = pd.merge(real_df, pred_df, left_on='0_PARAM_ImgName', right_on='image_name')
+                merged.drop(columns=['image_name'], inplace=True)
 
                 merged['diff_AR_in_CE'] = merged['12_COMPUTED_lacune_ratio_percent'] - merged['AR_percent_in_Cortex+Endoderm']
                 merged['diff_AR_in_Cortex'] = merged['12_COMPUTED_lacune_ratio_percent'] - merged['AR_percent_in_Cortex_only']
